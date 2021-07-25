@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html style="height: 100%;">
+<head>
+	<meta charset="utf-8">
+	<title>Typing Challenge</title>
+</head>
+<body style="background: #121212; color: white; height: 100%; width: 100%;">
+	<div style="display: flex; justify-content: center; align-content: center; flex-direction: column; align-items: center; width: 100%; height: 100%">
+		<div style="font-size: 50px;">Type A to Z</div>
+		<div style="width: 50%; height: 30%; align-items: center; margin: 20px">
+			<textarea name="alphabets" style="height: 100%; width: 100%; padding: 10px; font-size: 30px;" id="text" autofocus></textarea>
+		</div>
+		<div id="alphabets" style="margin: 20px; font-size: 30px">	
+		</div>	
+		<div style="margin: 20px; font-size: 30px">Time: <span id="time">00 : 00 : 00 : 000</span></div>
+		<div><button style="margin: 20px; font-size: 20px; cursor: pointer; padding: 10px;" id="reset">Reset</button></div>
+		<div style="margin: 20px; font-size: 20px">Your Best: <span id="best"></span></div>
+	</div>
+	<script type="text/javascript">
+		// Global Variables
+		var hashTable = [];
+		var count = 0;
+		var success = false;
+		var str = "";
+		var startTime = null;
+		var endTime = null;
+		var timer = setInterval(updateTime, 1);
+		
+		// Get Document Elements
+		var body = document.getElementsByTagName("body")[0];
+		var text = document.getElementById("text");
+		var alphabets = document.getElementById("alphabets");
+		var time = document.getElementById("time");
+		var resetBtn = document.getElementById("reset");
+		var best = document.getElementById("best");
+
+		// Add A to Z characters on the screen & its status in hashTable
+		for(var c=65; c<65+26; c++) {
+			hashTable.push(false);
+			let span = document.createElement('span');
+			span.appendChild(document.createTextNode(String.fromCharCode(c) + " "));
+			span.setAttribute('id', c);
+			alphabets.appendChild(span);
+		}
+
+		// Get best time from local storage
+		var bestTime = localStorage.getItem('bestTime');
+		if(bestTime == null) {
+			best.textContent = "00 : 00 : 00 : 000";
+		} else {
+			let t = convertDiffToTime(bestTime);
+			best.textContent = formatString(t.hh, 2) + " : " + formatString(t.mm, 2) + " : " + formatString(t.ss, 2) + " : " + formatString(t.ms, 3);
+		}
+
+		// bind eventHandlers
+		text.onkeydown = refreshStatus;
+		resetBtn.onclick = reset;
+
+		// Function Definitions
+		function refreshStatus(e) {
+			if(!success) {
+				var n = e.keyCode;
+				if(n >= 65 && n <= 90) {
+					if(startTime == null)
+						startTime = new Date();
+
+					if(!hashTable[n-65]) {
+						str = str + String.fromCharCode(n) + " ";
+						var ch = document.getElementById(n);
+						ch.style.color = 'green';
+						hashTable[n-65] = true;
+						count++;
+					}
+
+					if(count == 26)
+						endGame();
+				}
+				text.value = str;
+			}
+		}
+
+		function endGame() {
+			endTime = new Date();
+			updateBestTime();
+			success = true;
+			text.disabled = true;
+			console.log("Finish");
+		}
+
+		function updateTime() {
+			if(startTime != null) {
+				if(endTime == null) {
+					var difference_ms = (new Date()).getTime() - startTime.getTime();
+					var t = convertDiffToTime(difference_ms);
+					var timeText = formatString(t.hh, 2) + " : " + formatString(t.mm, 2) + " : " + formatString(t.ss, 2) + " : " + formatString(t.ms, 3);
+
+					time.textContent = timeText;
+				} else {
+					clearInterval(timer);
+				}
+			}
+		}
+
+		function formatString(num, size) {
+			num = num + "";
+			
+			while(size - num.length > 0)
+				num = "0" + num;
+
+			num = num.substr(0, size);
+			return num;
+		}
+
+		function reset() {
+			hashTable = [];
+			count = 0;
+			success = false;
+			str = "";
+			startTime = null;
+			endTime = null;
+			timer = setInterval(updateTime, 1);
+
+			for(var c=65; c<65+26; c++) {
+				hashTable.push(false);
+				let ch = document.getElementById(c);
+				ch.style.color = 'white';
+			}
+
+			text.value = str;
+			text.disabled = false;
+			text.focus();
+			time.textContent = "00 : 00 : 00 : 000";
+		}
+
+		function convertDiffToTime(difference_ms) {
+			var milliseconds = difference_ms%1000;
+			//take out milliseconds
+			difference_ms = difference_ms/1000;
+			var seconds = Math.floor(difference_ms % 60);
+			difference_ms = difference_ms/60; 
+			var minutes = Math.floor(difference_ms % 60);
+			difference_ms = difference_ms/60; 
+			var hours = Math.floor(difference_ms % 24);  
+			var days = Math.floor(difference_ms/24);
+			return {ms: milliseconds, ss: seconds, mm: minutes, hh: hours, dd: days};
+		}
+
+		function updateBestTime() {
+			var bestTime = localStorage.getItem('bestTime');
+			currentTime = endTime.getTime() - startTime.getTime();
+			if(bestTime == null || bestTime > currentTime) {
+				localStorage.setItem('bestTime', currentTime);
+				let t = convertDiffToTime(currentTime);
+			best.textContent = formatString(t.hh, 2) + " : " + formatString(t.mm, 2) + " : " + formatString(t.ss, 2) + " : " + formatString(t.ms, 3);
+			}
+		}
+
+	</script>
+</body>
+</html>
